@@ -61,7 +61,7 @@ trigger:
     device_id: !input remote
 action:
   - choose:
-    # Dial rotated counterclockwise
+    # Dial rotatation
     - conditions:
       - '{{ event == "step_with_on_off" }}'
       - '{{ step_mode == "StepMode.Up" }}'
