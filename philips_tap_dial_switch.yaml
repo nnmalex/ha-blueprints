@@ -1,1 +1,99 @@
+blueprint:
+  name: Philips Tap Dial Switch
+  description: 'Control brightness of one light with the dial on a Philips Hue Tap Switch. Use the four buttons
+    to assign your own actions.'
+  source_url: https://github.com/nnmalex/ha-blueprints/blob/main/philips_tap_dial_switch.yaml
+  domain: automation
+  input:
+    remote:
+      name: Philips Hue Tap Switch
+      selector:
+        device:
+          integration: zha
+          manufacturer: Signify Netherlands B.V.
+          model: RDM002
+          multiple: false
+    dimmable_light:
+      name: Dimmable Light
+      description: The light to be controlled with the dial
+      selector:
+        target:
+          entity:
+            domain: light
+    button_1_press:
+      name: Button 1 Press
+      description: Action to run in a single press of button 1
+      default: []
+      selector:
+        action: {}
+    button_2_press:
+      name: Button 2 Press
+      description: Action to run in a single press of button 2
+      default: []
+      selector:
+        action: {}
+    button_3_press:
+      name: Button 3 Press
+      description: Action to run in a single press of button 3
+      default: []
+      selector:
+        action: {}
+    button_4_press:
+      name: Button 4 Press
+      description: Action to run in a single press of button 4
+      default: []
+      selector:
+        action: {}
 
+mode: restart
+max_exceeded: silent
+
+variables:
+  event: '{{ trigger.event.data.command }}'
+  scene: "{{ trigger.event.data.args[1] }}"
+  step_mode: "{{ trigger.event.data.params.step_mode }}"
+  step_size: "{{ trigger.event.data.params.step_size }}"
+
+trigger:
+- platform: event
+  event_type: zha_event
+  event_data:
+    device_id: !input remote
+action:
+  - choose:
+    # Dial rotated counterclockwise
+    - conditions:
+      - '{{ event == "step_with_on_off" }}'
+      - '{{ step_mode == "StepMode.Up" }}'
+      sequence:
+        - service: light.turn_on
+          target: !input dimmable_light
+          data:
+            brightness_step_pct: '{{ step_size }}'
+            transition: 1
+    - conditions:
+      - '{{ event == "step_with_on_off" }}'
+      - '{{ step_mode == "StepMode.Down" }}'
+      sequence:
+        - service: light.turn_on
+          target: !input dimmable_light
+          data:
+            brightness_step_pct: '{{ -step_size }}'
+            transition: 1
+    # Buttons
+    - conditions:
+      - '{{ event == "recall" }}'
+      - '{{ scene == 1 }}'
+      sequence: !input button_1_press
+    - conditions:
+      - '{{ event == "recall" }}'
+      - '{{ scene == 0 }}'
+      sequence: !input button_2_press
+    - conditions:
+      - '{{ event == "recall" }}'
+      - '{{ scene == 5 }}'
+      sequence: !input button_3_press
+    - conditions:
+      - '{{ event == "recall" }}'
+      - '{{ scene == 4 }}'
+      sequence: !input button_4_press
